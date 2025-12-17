@@ -8,14 +8,20 @@ import Signup from "./pages/Signup";
 import ProfilePage from "./pages/ProfilePage";
 
 export default function App() {
+  const RequireAuth = ({ children }) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) return <Navigate to="/login" replace />;
+    return children;
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+        <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
         <Route path="/links/:id" element={<LinkPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
