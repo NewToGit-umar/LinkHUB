@@ -10,4 +10,4 @@ build/
 .cache/
 package-lock.json
 pnpm-lock.yaml
-/.turbo
+/.turbo.env.example
