@@ -1,11 +1,11 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { LandingPage } from './components/LandingPage';
-import Dashboard from './components/DashboardClean';
-import { LinkPage } from './components/LinkPage';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import ProfilePage from './pages/ProfilePage';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { LandingPage } from "./components/LandingPage";
+import Dashboard from "./components/DashboardClean";
+import { LinkPage } from "./components/LinkPage";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ProfilePage from "./pages/ProfilePage";
 
 export default function App() {
   return (
