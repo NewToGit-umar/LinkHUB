@@ -14,6 +14,10 @@ router.post('/register', authController.register);
 // Login
 router.post('/login', authController.login);
 
+// OAuth
+router.post('/google', authController.googleAuth);
+router.post('/facebook', authController.facebookAuth);
+
 // Logout
 router.post('/logout', authController.logout);
 
@@ -30,6 +34,12 @@ router.get('/me', authMiddleware.protect, authController.getMe);
 
 // Update password
 router.patch('/update-password', authMiddleware.protect, authController.updatePassword);
+
+// Link OAuth account
+router.post('/link-oauth', authMiddleware.protect, authController.linkOAuthAccount);
+
+// Unlink OAuth account
+router.post('/unlink-oauth', authMiddleware.protect, authController.unlinkOAuthAccount);
 
 module.exports = router;
   try {

@@ -241,4 +241,162 @@ exports.refreshToken = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Google OAuth Callback
+ * POST /api/auth/google
+ * @param {Object} req - Express request
+ * @param {Object} res - Express response
+ * @param {Function} next - Express next
+ */
+exports.googleAuth = asyncHandler(async (req, res, next) => {
+  const { googleId, email, firstName, lastName, avatar } = req.body;
+
+  if (!googleId || !email) {
+    return next(new AppError('Google ID and email are required', 400));
+  }
+
+  // Check if user exists
+  let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+  if (user) {
+    // Update google ID if not set
+    if (!user.googleId) {
+      user.googleId = googleId;
+      await user.save({ validateBeforeSave: false });
+    }
+    logger.success(`✅ User logged in via Google: ${email}`);
+    return sendTokenResponse(user, 200, res);
+  }
+
+  // Create new user
+  user = await User.create({
+    googleId,
+    email,
+    firstName: firstName || email.split('@')[0],
+    lastName: lastName || '',
+    avatar,
+    isEmailVerified: true, // Google email is verified
+    isActive: true
+  });
+
+  logger.success(`✅ New user created via Google: ${email}`);
+  sendTokenResponse(user, 201, res);
+});
+
+/**
+ * Facebook OAuth Callback
+ * POST /api/auth/facebook
+ * @param {Object} req - Express request
+ * @param {Object} res - Express response
+ * @param {Function} next - Express next
+ */
+exports.facebookAuth = asyncHandler(async (req, res, next) => {
+  const { facebookId, email, firstName, lastName, avatar } = req.body;
+
+  if (!facebookId || !email) {
+    return next(new AppError('Facebook ID and email are required', 400));
+  }
+
+  // Check if user exists
+  let user = await User.findOne({ $or: [{ facebookId }, { email }] });
+
+  if (user) {
+    // Update facebook ID if not set
+    if (!user.facebookId) {
+      user.facebookId = facebookId;
+      await user.save({ validateBeforeSave: false });
+    }
+    logger.success(`✅ User logged in via Facebook: ${email}`);
+    return sendTokenResponse(user, 200, res);
+  }
+
+  // Create new user
+  user = await User.create({
+    facebookId,
+    email,
+    firstName: firstName || email.split('@')[0],
+    lastName: lastName || '',
+    avatar,
+    isEmailVerified: true, // Facebook email is verified
+    isActive: true
+  });
+
+  logger.success(`✅ New user created via Facebook: ${email}`);
+  sendTokenResponse(user, 201, res);
+});
+
+/**
+ * Link OAuth Account to Existing User
+ * POST /api/auth/link-oauth
+ * @param {Object} req - Express request
+ * @param {Object} res - Express response
+ * @param {Function} next - Express next
+ */
+exports.linkOAuthAccount = asyncHandler(async (req, res, next) => {
+  const { provider, providerId } = req.body;
+
+  if (!provider || !providerId) {
+    return next(new AppError('Provider and provider ID are required', 400));
+  }
+
+  const user = await User.findById(req.user.id);
+
+  if (!user) {
+    return next(new AppError('User not found', 404));
+  }
+
+  // Update user with OAuth ID
+  const oauthField = `${provider}Id`;
+  if (!user[oauthField]) {
+    user[oauthField] = providerId;
+    await user.save({ validateBeforeSave: false });
+    logger.success(`✅ OAuth account linked: ${provider} for user ${user.email}`);
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: `${provider} account linked successfully`,
+    data: { user: user.toPublicJSON() }
+  });
+});
+
+/**
+ * Unlink OAuth Account
+ * POST /api/auth/unlink-oauth
+ * @param {Object} req - Express request
+ * @param {Object} res - Express response
+ * @param {Function} next - Express next
+ */
+exports.unlinkOAuthAccount = asyncHandler(async (req, res, next) => {
+  const { provider } = req.body;
+
+  if (!provider) {
+    return next(new AppError('Provider is required', 400));
+  }
+
+  const user = await User.findById(req.user.id);
+
+  if (!user) {
+    return next(new AppError('User not found', 404));
+  }
+
+  const oauthField = `${provider}Id`;
+  
+  // Check if user has password (can't remove only auth method)
+  if (!user.password && ['google', 'facebook', 'twitter', 'linkedin', 'instagram'].filter(p => user[`${p}Id`]).length === 1) {
+    return next(new AppError('Cannot unlink the only authentication method', 400));
+  }
+
+  user[oauthField] = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  logger.success(`✅ OAuth account unlinked: ${provider} for user ${user.email}`);
+
+  res.status(200).json({
+    status: 'success',
+    message: `${provider} account unlinked successfully`,
+    data: { user: user.toPublicJSON() }
+  });
+});
+
 module.exports = exports;
