@@ -45,6 +45,7 @@ VITE_FACEBOOK_APP_ID=your-facebook-app-id
 ### Running the Application
 
 **Development mode**
+
 ```bash
 npm run dev
 ```
@@ -52,11 +53,13 @@ npm run dev
 The application will open at `http://localhost:5173`
 
 **Production build**
+
 ```bash
 npm run build
 ```
 
 **Preview production build**
+
 ```bash
 npm run preview
 ```
@@ -72,6 +75,7 @@ npm run preview
 ## 📦 Dependencies
 
 ### UI & Styling
+
 - **react** – UI library
 - **react-dom** – DOM rendering
 - **react-router-dom** – Routing
@@ -80,42 +84,51 @@ npm run preview
 - **lucide-react** – Icon library
 
 ### Data & State Management
+
 - **axios** – HTTP client
 - **react-query** – Data fetching and caching
 
 ### Charts & Visualization
+
 - **chart.js** – Charts library
 - **react-chartjs-2** – React wrapper for Chart.js
 
 ### Forms & Validation
+
 - **react-hook-form** – Form handling
 - **zod** – Schema validation
 
 ### Utilities
+
 - **date-fns** – Date manipulation
 - **clsx** – Classname utility
 
 ## 📄 Pages
 
 ### Authentication
+
 - **Login** – User login page
 - **Register** – User registration page
 - **Forgot Password** – Password reset page
 
 ### Dashboard
+
 - **Dashboard** – Main dashboard with stats
 - **Profile** – User profile management
 
 ### Social Media
+
 - **Social Accounts** – Connect/manage social accounts
 - **Post Composer** – Create and schedule posts
 - **Scheduled Posts** – View scheduled posts
 
 ### Analytics
+
 - **Analytics Dashboard** – View analytics metrics
 - **Export** – Export analytics reports
 
 ### Team
+
 - **Team Members** – Manage team members
 - **Invitations** – Send team invitations
 
