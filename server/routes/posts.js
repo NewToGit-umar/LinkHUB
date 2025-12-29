@@ -16,4 +16,7 @@ router.put('/:id', auth, postController.updatePost)
 // Delete (cancel) a post
 router.delete('/:id', auth, postController.deletePost)
 
+// Publish (queue) a post for immediate publishing
+router.post('/:id/publish', auth, postController.publishPost)
+
 export default router

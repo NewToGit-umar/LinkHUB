@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { postsAPI } from "../../services/api";
 import PostComposer from "../../components/PostComposer";
 
@@ -15,6 +15,12 @@ export default function Posts() {
   });
 
   const posts = data || [];
+  const qc = useQueryClient();
+
+  const publishMutation = useMutation({
+    mutationFn: (id) => postsAPI.publish(id),
+    onSuccess: () => qc.invalidateQueries(["posts"]),
+  });
 
   return (
     <div className="p-6">
@@ -38,7 +44,21 @@ export default function Posts() {
               <div className="text-xs text-gray-500">
                 Platforms: {p.platforms.join(", ")}
               </div>
-              <div className="text-xs text-gray-400">Status: {p.status}</div>
+              <div className="flex items-center justify-between mt-3">
+                <div className="text-xs text-gray-400">Status: {p.status}</div>
+                <div className="space-x-2">
+                  {p.status !== "queued" &&
+                    p.status !== "publishing" &&
+                    p.status !== "published" && (
+                      <button
+                        onClick={() => publishMutation.mutate(p._id)}
+                        className="px-3 py-1 bg-green-600 text-white rounded text-sm"
+                      >
+                        Queue
+                      </button>
+                    )}
+                </div>
+              </div>
             </div>
           ))}
         </div>

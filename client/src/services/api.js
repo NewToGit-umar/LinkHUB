@@ -59,4 +59,10 @@ export const socialAPI = {
   refresh: (provider) => api.post(`/social/refresh/${provider}`),
 }
 
+export const postsAPI = {
+  create: (data) => api.post('/posts', data),
+  list: () => api.get('/posts'),
+  publish: (id) => api.post(`/posts/${id}/publish`),
+}
+
 export default api

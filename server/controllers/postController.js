@@ -110,3 +110,30 @@ export async function deletePost(req, res) {
     return res.status(500).json({ message: 'Error deleting post', error: err.message })
   }
 }
+
+export async function publishPost(req, res) {
+  try {
+    const userId = req.user && req.user.id
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' })
+
+    const { id } = req.params
+    const post = await Post.findById(id)
+    if (!post) return res.status(404).json({ message: 'Post not found' })
+    if (String(post.userId) !== String(userId)) return res.status(403).json({ message: 'Forbidden' })
+
+    // Do not allow publishing cancelled/published/already publishing posts
+    if (['cancelled', 'published', 'publishing'].includes(post.status)) {
+      return res.status(400).json({ message: 'Cannot publish this post' })
+    }
+
+    // Mark as queued so the publisher service picks it up immediately
+    post.status = 'queued'
+    post.queuedAt = new Date()
+    await post.save()
+
+    return res.status(200).json({ message: 'Post queued for publishing', post })
+  } catch (err) {
+    console.error('publishPost error', err)
+    return res.status(500).json({ message: 'Error queuing post', error: err.message })
+  }
+}
