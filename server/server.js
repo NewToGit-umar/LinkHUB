@@ -43,6 +43,10 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/linkhub')
   .then(() => console.log('✅ MongoDB connected successfully'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
+// Start token refresher service (refreshes expiring social tokens)
+import { startTokenRefresher } from './services/tokenRefresher.js'
+startTokenRefresher()
+
 // Basic route for testing
 app.get('/api/health', (req, res) => {
   res.status(200).json({ 
