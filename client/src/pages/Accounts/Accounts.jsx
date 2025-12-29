@@ -2,6 +2,7 @@ import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { socialAPI } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
+import SocialAccountCard from "../../components/SocialAccountCard";
 
 const providers = [
   "twitter",
@@ -30,6 +31,11 @@ export default function Accounts() {
     onSuccess: () => qc.invalidateQueries(["social_accounts"]),
   });
 
+  const syncMutation = useMutation({
+    mutationFn: (provider) => socialAPI.refresh(provider),
+    onSuccess: () => qc.invalidateQueries(["social_accounts"]),
+  });
+
   const handleConnect = async (provider) => {
     // Open start endpoint in new tab (server should redirect to provider auth URL)
     const url = `${
@@ -53,61 +59,15 @@ export default function Accounts() {
         {providers.map((p) => {
           const acct = accounts.find((a) => a.platform === p);
           return (
-            <div
+            <SocialAccountCard
               key={p}
-              className="p-4 border border-gray-200 rounded-lg bg-white"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="font-medium capitalize">{p}</div>
-                <div className="text-sm text-gray-500">
-                  {acct ? "Connected" : "Not connected"}
-                </div>
-              </div>
-
-              {acct ? (
-                <div className="space-y-2">
-                  <div className="text-sm text-gray-700">
-                    @{acct.accountHandle}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {acct.accountName}
-                  </div>
-                  <div className="flex items-center space-x-2 mt-3">
-                    <button
-                      onClick={() => disconnectMutation.mutate(p)}
-                      className="btn-danger text-sm px-3 py-1"
-                      disabled={disconnectMutation.isLoading}
-                    >
-                      Disconnect
-                    </button>
-                    <button
-                      onClick={() =>
-                        window.open(
-                          accounts.find((a) => a.platform === p)?.profileData
-                            ?.url || "#",
-                          "_blank"
-                        )
-                      }
-                      className="btn-outline text-sm px-3 py-1"
-                    >
-                      View Profile
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
-                    No account connected
-                  </div>
-                  <button
-                    onClick={() => handleConnect(p)}
-                    className="btn-primary text-sm px-3 py-1"
-                  >
-                    Connect
-                  </button>
-                </div>
-              )}
-            </div>
+              provider={p}
+              account={acct}
+              onConnect={handleConnect}
+              onDisconnect={(prov) => disconnectMutation.mutate(prov)}
+              onSync={(prov) => syncMutation.mutate(prov)}
+              syncing={syncMutation.isLoading}
+            />
           );
         })}
       </div>

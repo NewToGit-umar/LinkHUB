@@ -56,6 +56,7 @@ export const socialAPI = {
   start: (provider) => api.get(`/social/start/${provider}`),
   callback: (provider, data) => api.post(`/social/callback/${provider}`, data),
   disconnect: (provider) => api.post(`/social/disconnect/${provider}`),
+  refresh: (provider) => api.post(`/social/refresh/${provider}`),
 }
 
 export default api
