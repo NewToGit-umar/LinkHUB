@@ -60,6 +60,9 @@ app.use('/api/invitations', (await import('./routes/invitations.js')).default);
 // Mount comments routes (Task 40)
 app.use('/api/comments', (await import('./routes/comments.js')).default);
 
+// Mount notifications routes (Task 42)
+app.use('/api/notifications', (await import('./routes/notifications.js')).default);
+
 // Database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/linkhub')
   .then(() => console.log('✅ MongoDB connected successfully'))

@@ -123,4 +123,13 @@ export const commentsAPI = {
   react: (commentId, reaction) => api.post(`/comments/${commentId}/react`, { reaction })
 }
 
+export const notificationsAPI = {
+  list: (params) => api.get('/notifications', { params }),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+  markAsRead: (id) => api.post(`/notifications/${id}/read`),
+  markAllAsRead: () => api.post('/notifications/read-all'),
+  delete: (id) => api.delete(`/notifications/${id}`),
+  clearRead: () => api.delete('/notifications/clear-read')
+}
+
 export default api
