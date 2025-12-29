@@ -65,4 +65,9 @@ export const postsAPI = {
   publish: (id) => api.post(`/posts/${id}/publish`),
 }
 
+export const analyticsAPI = {
+  fetch: () => api.post('/analytics/fetch'),
+  summary: (params) => api.get('/analytics/summary', { params }),
+}
+
 export default api
