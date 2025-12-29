@@ -45,6 +45,9 @@ app.use('/api/analytics', (await import('./routes/analytics.js')).default);
 // Mount bio/link routes (Task 32)
 app.use('/api/bio', (await import('./routes/bio.js')).default);
 
+// Mount templates routes (Task 34)
+app.use('/api/templates', (await import('./routes/templates.js')).default);
+
 // Database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/linkhub')
   .then(() => console.log('✅ MongoDB connected successfully'))
@@ -63,6 +66,10 @@ startPublisher()
 // Start analytics scheduler
 import { startAnalyticsScheduler } from './services/analyticsScheduler.js'
 startAnalyticsScheduler()
+
+// Seed system templates
+import { seedTemplates } from './controllers/templateController.js'
+seedTemplates()
 
 // Basic route for testing
 app.get('/api/health', (req, res) => {

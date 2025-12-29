@@ -77,4 +77,11 @@ export const bioAPI = {
   update: (id, data) => api.patch(`/bio/pages/${id}`, data)
 }
 
+export const templatesAPI = {
+  list: () => api.get('/templates'),
+  getBySlug: (slug) => api.get(`/templates/${slug}`),
+  create: (data) => api.post('/templates', data),
+  apply: (bioPageId, templateSlug) => api.post('/templates/apply', { bioPageId, templateSlug })
+}
+
 export default api
