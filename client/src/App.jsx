@@ -7,6 +7,7 @@ import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Accounts from "./pages/Accounts/Accounts";
+import Posts from "./pages/Posts/Posts";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,14 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <Accounts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/posts"
+          element={
+            <ProtectedRoute>
+              <Posts />
             </ProtectedRoute>
           }
         />
