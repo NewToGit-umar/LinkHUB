@@ -49,6 +49,10 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/linkhub')
 import { startTokenRefresher } from './services/tokenRefresher.js'
 startTokenRefresher()
 
+// Start post scheduler service
+import { startScheduler } from './services/scheduler.js'
+startScheduler()
+
 // Basic route for testing
 app.get('/api/health', (req, res) => {
   res.status(200).json({ 
