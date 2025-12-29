@@ -1,6 +1,9 @@
 import Post from '../models/Post.js'
 import Analytics from '../models/Analytics.js'
 import SocialAccount from '../models/SocialAccount.js'
+import twitterProvider from './providers/twitter.js'
+import facebookProvider from './providers/facebook.js'
+import instagramProvider from './providers/instagram.js'
 import Analytics from '../models/Analytics.js'
 import SocialAccount from '../models/SocialAccount.js'
 
@@ -18,33 +21,36 @@ function randomMetrics() {
 }
 
 async function fetchForTwitter(account) {
-  // Placeholder: fetch recent posts for this user/platform and synthesize metrics
+  // Prefer provider module (real implementation) but fallback to synthetic
+  try {
+    const r = await twitterProvider.fetchAnalytics(account)
+    if (r && r.length) return r
+  } catch (err) {
+    console.error('twitterProvider error', err)
+  }
   const recent = await Post.find({ userId: account.userId, platforms: 'twitter' }).sort({ publishedAt: -1 }).limit(10)
   return recent.map(p => ({ postId: p._id, metrics: randomMetrics(), recordedAt: p.publishedAt || new Date() }))
 }
 
 async function fetchForFacebook(account) {
+  try {
+    const r = await facebookProvider.fetchAnalytics(account)
+    if (r && r.length) return r
+  } catch (err) {
+    console.error('facebookProvider error', err)
+  }
   const recent = await Post.find({ userId: account.userId, platforms: 'facebook' }).sort({ publishedAt: -1 }).limit(10)
   return recent.map(p => ({ postId: p._id, metrics: randomMetrics(), recordedAt: p.publishedAt || new Date() }))
 }
 
 async function fetchForInstagram(account) {
+  try {
+    const r = await instagramProvider.fetchAnalytics(account)
+    if (r && r.length) return r
+  } catch (err) {
+    console.error('instagramProvider error', err)
+  }
   const recent = await Post.find({ userId: account.userId, platforms: 'instagram' }).sort({ publishedAt: -1 }).limit(10)
-  return recent.map(p => ({ postId: p._id, metrics: randomMetrics(), recordedAt: p.publishedAt || new Date() }))
-}
-
-async function fetchForLinkedin(account) {
-  const recent = await Post.find({ userId: account.userId, platforms: 'linkedin' }).sort({ publishedAt: -1 }).limit(10)
-  return recent.map(p => ({ postId: p._1d, metrics: randomMetrics(), recordedAt: p.publishedAt || new Date() }))
-}
-
-async function fetchForTiktok(account) {
-  const recent = await Post.find({ userId: account.userId, platforms: 'tiktok' }).sort({ publishedAt: -1 }).limit(10)
-  return recent.map(p => ({ postId: p._id, metrics: randomMetrics(), recordedAt: p.publishedAt || new Date() }))
-}
-
-async function fetchForYoutube(account) {
-  const recent = await Post.find({ userId: account.userId, platforms: 'youtube' }).sort({ publishedAt: -1 }).limit(10)
   return recent.map(p => ({ postId: p._id, metrics: randomMetrics(), recordedAt: p.publishedAt || new Date() }))
 }
 
