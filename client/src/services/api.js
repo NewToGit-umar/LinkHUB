@@ -132,4 +132,9 @@ export const notificationsAPI = {
   clearRead: () => api.delete('/notifications/clear-read')
 }
 
+export const milestonesAPI = {
+  getProgress: () => api.get('/milestones'),
+  triggerCheck: () => api.post('/milestones/check')
+}
+
 export default api

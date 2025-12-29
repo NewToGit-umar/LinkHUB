@@ -63,6 +63,9 @@ app.use('/api/comments', (await import('./routes/comments.js')).default);
 // Mount notifications routes (Task 42)
 app.use('/api/notifications', (await import('./routes/notifications.js')).default);
 
+// Mount milestones routes (Task 45)
+app.use('/api/milestones', (await import('./routes/milestones.js')).default);
+
 // Database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/linkhub')
   .then(() => console.log('✅ MongoDB connected successfully'))
@@ -81,6 +84,10 @@ startPublisher()
 // Start analytics scheduler
 import { startAnalyticsScheduler } from './services/analyticsScheduler.js'
 startAnalyticsScheduler()
+
+// Start milestone checker (Task 45)
+import { startMilestoneChecker } from './services/milestoneService.js'
+startMilestoneChecker()
 
 // Seed system templates
 import { seedTemplates } from './controllers/templateController.js'
