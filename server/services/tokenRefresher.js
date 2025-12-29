@@ -1,6 +1,8 @@
 import SocialAccount from '../models/SocialAccount.js'
+import Notification from '../models/Notification.js'
 
 const REFRESH_WINDOW_MS = (24 * 60 * 60 * 1000) // 24 hours before expiry
+const EXPIRY_ALERT_WINDOW_MS = (3 * 24 * 60 * 60 * 1000) // Alert 3 days before expiry
 
 // Placeholder provider refreshers map. Real implementations should call provider token endpoints.
 const providerRefreshers = {
@@ -16,6 +18,15 @@ async function refreshAccount(account) {
       account.syncStatus = 'failed'
       account.syncError = `No refresher configured for provider: ${provider}`
       await account.save()
+      
+      // Notify user that they need to manually reconnect
+      await Notification.notifyTokenExpiring(
+        account.userId,
+        account._id,
+        account.platform,
+        account.tokenExpiresAt
+      )
+      
       return false
     }
 
@@ -60,6 +71,47 @@ async function findAccountsToRefresh() {
   })
 }
 
+// Find accounts that will expire soon (for alerts)
+async function findAccountsExpiringSoon() {
+  const alertWindow = new Date(Date.now() + EXPIRY_ALERT_WINDOW_MS)
+  
+  return SocialAccount.find({
+    isActive: true,
+    isRevoked: false,
+    tokenExpiresAt: { $exists: true, $lte: alertWindow }
+  })
+}
+
+// Send expiry alerts for accounts expiring soon
+async function sendExpiryAlerts() {
+  try {
+    const candidates = await findAccountsExpiringSoon()
+    if (!candidates || candidates.length === 0) return
+
+    for (const account of candidates) {
+      // Check if we've already sent a notification recently (within 24 hours)
+      const recentNotification = await Notification.findOne({
+        userId: account.userId,
+        type: 'token_expiring',
+        'data.reference.id': account._id,
+        createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+      })
+
+      if (!recentNotification) {
+        await Notification.notifyTokenExpiring(
+          account.userId,
+          account._id,
+          account.platform,
+          account.tokenExpiresAt
+        )
+        console.log(`Sent token expiry alert for ${account.platform} account ${account._id}`)
+      }
+    }
+  } catch (err) {
+    console.error('sendExpiryAlerts error:', err)
+  }
+}
+
 let job = null
 
 function createHourlyJob(fn) {
@@ -75,12 +127,16 @@ export function startTokenRefresher() {
 
   job = createHourlyJob(async () => {
     try {
+      // Refresh tokens that are about to expire
       const candidates = await findAccountsToRefresh()
-      if (!candidates || candidates.length === 0) return
-
-      for (const acc of candidates) {
-        await refreshAccount(acc)
+      if (candidates && candidates.length > 0) {
+        for (const acc of candidates) {
+          await refreshAccount(acc)
+        }
       }
+      
+      // Send expiry alerts for tokens expiring in 3 days
+      await sendExpiryAlerts()
     } catch (err) {
       console.error('tokenRefresher error:', err)
     }
@@ -91,6 +147,9 @@ export function startTokenRefresher() {
     try {
       const candidates = await findAccountsToRefresh()
       for (const acc of candidates) await refreshAccount(acc)
+      
+      // Also send alerts at startup
+      await sendExpiryAlerts()
     } catch (err) {
       console.error('tokenRefresher startup error:', err)
     }
