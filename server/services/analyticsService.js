@@ -4,8 +4,6 @@ import SocialAccount from '../models/SocialAccount.js'
 import twitterProvider from './providers/twitter.js'
 import facebookProvider from './providers/facebook.js'
 import instagramProvider from './providers/instagram.js'
-import Analytics from '../models/Analytics.js'
-import SocialAccount from '../models/SocialAccount.js'
 
 // Placeholder analytics fetcher service.
 // Real provider integrations should replace the per-provider stubs below.
@@ -21,7 +19,6 @@ function randomMetrics() {
 }
 
 async function fetchForTwitter(account) {
-  // Prefer provider module (real implementation) but fallback to synthetic
   try {
     const r = await twitterProvider.fetchAnalytics(account)
     if (r && r.length) return r
@@ -61,9 +58,6 @@ export async function fetchAnalyticsForAccount(account) {
       case 'twitter': return await fetchForTwitter(account)
       case 'facebook': return await fetchForFacebook(account)
       case 'instagram': return await fetchForInstagram(account)
-      case 'linkedin': return await fetchForLinkedin(account)
-      case 'tiktok': return await fetchForTiktok(account)
-      case 'youtube': return await fetchForYoutube(account)
       default: return []
     }
   } catch (err) {
