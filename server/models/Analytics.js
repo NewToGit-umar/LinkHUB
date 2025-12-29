@@ -21,6 +21,9 @@ AnalyticsSchema.index({ userId: 1 })
 AnalyticsSchema.index({ postId: 1 })
 AnalyticsSchema.index({ platform: 1 })
 AnalyticsSchema.index({ recordedAt: 1 })
+// Compound indexes for common query patterns
+AnalyticsSchema.index({ userId: 1, platform: 1, recordedAt: -1 })
+AnalyticsSchema.index({ userId: 1, postId: 1 })
 
 // Aggregation helpers
 AnalyticsSchema.statics.aggregateByPlatform = function(userId, from, to) {
@@ -58,6 +61,26 @@ AnalyticsSchema.statics.monthlyCounts = function(userId, months = 6) {
       reach: { $sum: '$metrics.reach' }
     } },
     { $sort: { '_id.year': 1, '_id.month': 1 } }
+  ])
+}
+
+AnalyticsSchema.statics.topPosts = function(userId, from, to, limit = 5) {
+  const match = { userId: mongoose.Types.ObjectId(userId) }
+  if (from) match.recordedAt = { $gte: new Date(from) }
+  if (to) match.recordedAt = match.recordedAt ? { ...match.recordedAt, $lte: new Date(to) } : { $lte: new Date(to) }
+
+  return this.aggregate([
+    { $match: match },
+    { $group: {
+      _id: '$postId',
+      likes: { $sum: '$metrics.likes' },
+      shares: { $sum: '$metrics.shares' },
+      comments: { $sum: '$metrics.comments' },
+      reach: { $sum: '$metrics.reach' }
+    } },
+    { $project: { postId: '$_id', score: { $add: ['$likes', '$shares', '$comments'] }, likes:1, shares:1, comments:1, reach:1, _id:0 } },
+    { $sort: { score: -1 } },
+    { $limit: limit }
   ])
 }
 
