@@ -34,6 +34,19 @@ export async function createBioPage(req, res) {
   }
 }
 
+export async function getUserBioPages(req, res) {
+  try {
+    const userId = req.user && req.user.id
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' })
+
+    const pages = await BioPage.find({ userId }).sort({ createdAt: -1 }).lean()
+    return res.status(200).json({ pages })
+  } catch (err) {
+    console.error('getUserBioPages error', err)
+    return res.status(500).json({ message: 'Error fetching bio pages', error: err.message })
+  }
+}
+
 export async function getBioPage(req, res) {
   try {
     const { slug } = req.params

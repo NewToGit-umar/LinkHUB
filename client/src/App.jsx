@@ -10,6 +10,9 @@ import Accounts from "./pages/Accounts/Accounts";
 import Posts from "./pages/Posts/Posts";
 import Calendar from "./pages/Calendar/Calendar";
 import Analytics from "./pages/Analytics/Analytics";
+import BioList from "./pages/Bio/BioList";
+import BioEditor from "./pages/Bio/BioEditor";
+import BioPageView from "./pages/Bio/BioPageView";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +77,32 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/bio"
+          element={
+            <ProtectedRoute>
+              <BioList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bio/new"
+          element={
+            <ProtectedRoute>
+              <BioEditor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bio/edit/:slug"
+          element={
+            <ProtectedRoute>
+              <BioEditor />
+            </ProtectedRoute>
+          }
+        />
+        {/* Public bio page view */}
+        <Route path="/p/:slug" element={<BioPageView />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
       <Toaster position="top-right" />
