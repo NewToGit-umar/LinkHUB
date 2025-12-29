@@ -103,4 +103,15 @@ export const teamsAPI = {
   updateMemberRole: (slug, memberId, role) => api.patch(`/teams/${slug}/members/${memberId}/role`, { role })
 }
 
+export const invitationsAPI = {
+  getUserInvitations: () => api.get('/invitations/me'),
+  getByToken: (token) => api.get(`/invitations/token/${token}`),
+  accept: (token) => api.post(`/invitations/accept/${token}`),
+  decline: (token) => api.post(`/invitations/decline/${token}`),
+  getTeamInvitations: (slug) => api.get(`/invitations/team/${slug}`),
+  create: (slug, data) => api.post(`/invitations/team/${slug}`, data),
+  revoke: (slug, invitationId) => api.delete(`/invitations/team/${slug}/${invitationId}`),
+  resend: (slug, invitationId) => api.post(`/invitations/team/${slug}/${invitationId}/resend`)
+}
+
 export default api
