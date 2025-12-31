@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../hooks/useTheme";
 import {
   LayoutDashboard,
   Send,
@@ -17,6 +18,8 @@ import {
   Sparkles,
   Bell,
   User,
+  Moon,
+  Sun,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -37,6 +40,7 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme, isDark } = useTheme();
 
   const handleLogout = () => {
     logout();
@@ -47,7 +51,7 @@ export default function Layout({ children }) {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors duration-300">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -58,12 +62,12 @@ export default function Layout({ children }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full bg-white/90 backdrop-blur-xl border-r border-gray-200/50 shadow-2xl transition-all duration-300 ${
+        className={`fixed top-0 left-0 z-50 h-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border-r border-gray-200/50 dark:border-slate-700/50 shadow-2xl transition-all duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 ${collapsed ? "w-20" : "w-64"}`}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200/50">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200/50 dark:border-slate-700/50">
           {!collapsed && (
             <Link to="/dashboard" className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
@@ -81,9 +85,9 @@ export default function Layout({ children }) {
           )}
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+            className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 dark:text-gray-300" />
           </button>
         </div>
 
@@ -100,7 +104,7 @@ export default function Layout({ children }) {
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                   active
                     ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white"
                 }`}
               >
                 <Icon
@@ -119,27 +123,27 @@ export default function Layout({ children }) {
         {/* Collapse toggle (desktop only) */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 bg-white border border-gray-200 rounded-full items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
+          className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-full items-center justify-center shadow-md hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
         >
           <ChevronLeft
-            className={`w-4 h-4 text-gray-500 transition-transform ${
+            className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${
               collapsed ? "rotate-180" : ""
             }`}
           />
         </button>
 
         {/* User section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200/50 bg-white/50 backdrop-blur-sm">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200/50 dark:border-slate-700/50 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
           {!collapsed ? (
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold">
                 {user?.name?.charAt(0)?.toUpperCase() || "U"}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate">
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
                   {user?.name || "User"}
                 </p>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                   {user?.email || ""}
                 </p>
               </div>
@@ -153,7 +157,7 @@ export default function Layout({ children }) {
           )}
           <button
             onClick={handleLogout}
-            className={`flex items-center gap-3 w-full px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-colors ${
+            className={`flex items-center gap-3 w-full px-4 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors ${
               collapsed ? "justify-center" : ""
             }`}
           >
@@ -170,12 +174,12 @@ export default function Layout({ children }) {
         }`}
       >
         {/* Top bar */}
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 h-16 flex items-center justify-between px-4 lg:px-6">
+        <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-slate-700/50 h-16 flex items-center justify-between px-4 lg:px-6">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+            className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-6 h-6 dark:text-gray-300" />
           </button>
 
           <div className="flex-1 lg:flex-none">
@@ -183,21 +187,33 @@ export default function Layout({ children }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="relative p-2 hover:bg-gray-100 rounded-xl transition-colors">
-              <Bell className="w-5 h-5 text-gray-600" />
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDark ? (
+                <Sun className="w-5 h-5 text-yellow-500" />
+              ) : (
+                <Moon className="w-5 h-5 text-gray-600" />
+              )}
+            </button>
+            <button className="relative p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+              <Bell className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
             <Link
               to="/settings/privacy"
-              className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
             >
-              <Settings className="w-5 h-5 text-gray-600" />
+              <Settings className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </Link>
-            <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-gray-200">
+            <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-gray-200 dark:border-slate-700">
               <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
                 {user?.name?.charAt(0)?.toUpperCase() || "U"}
               </div>
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {user?.name?.split(" ")[0] || "User"}
               </span>
             </div>

@@ -1,23 +1,85 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { socialAPI } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
-import SocialAccountCard from "../../components/SocialAccountCard";
+import toast from "react-hot-toast";
+import {
+  Twitter,
+  Instagram,
+  Facebook,
+  Linkedin,
+  Youtube,
+  Music2,
+  Link2,
+  RefreshCw,
+  Unlink,
+  ExternalLink,
+  CheckCircle2,
+  AlertCircle,
+  Sparkles,
+  Plus,
+  Info,
+} from "lucide-react";
 
 const providers = [
-  "twitter",
-  "instagram",
-  "facebook",
-  "linkedin",
-  "tiktok",
-  "youtube",
+  {
+    id: "twitter",
+    name: "Twitter",
+    icon: Twitter,
+    color: "from-blue-400 to-blue-500",
+    bgColor: "bg-blue-500",
+    description: "Share updates and engage with followers",
+  },
+  {
+    id: "instagram",
+    name: "Instagram",
+    icon: Instagram,
+    color: "from-purple-500 via-pink-500 to-orange-400",
+    bgColor: "bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400",
+    description: "Share photos and stories",
+  },
+  {
+    id: "facebook",
+    name: "Facebook",
+    icon: Facebook,
+    color: "from-blue-600 to-blue-700",
+    bgColor: "bg-blue-600",
+    description: "Connect with your audience",
+  },
+  {
+    id: "linkedin",
+    name: "LinkedIn",
+    icon: Linkedin,
+    color: "from-blue-700 to-blue-800",
+    bgColor: "bg-blue-700",
+    description: "Professional networking",
+  },
+  {
+    id: "youtube",
+    name: "YouTube",
+    icon: Youtube,
+    color: "from-red-500 to-red-600",
+    bgColor: "bg-red-500",
+    description: "Share video content",
+  },
+  {
+    id: "tiktok",
+    name: "TikTok",
+    icon: Music2,
+    color: "from-gray-900 to-black",
+    bgColor: "bg-black",
+    description: "Short-form video content",
+  },
 ];
 
 export default function Accounts() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState(null);
+  const [demoHandle, setDemoHandle] = useState("");
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["social_accounts"],
     queryFn: async () => {
       const res = await socialAPI.list();
@@ -28,48 +90,378 @@ export default function Accounts() {
 
   const disconnectMutation = useMutation({
     mutationFn: (provider) => socialAPI.disconnect(provider),
-    onSuccess: () => qc.invalidateQueries(["social_accounts"]),
+    onSuccess: () => {
+      qc.invalidateQueries(["social_accounts"]);
+      toast.success("Account disconnected");
+    },
+    onError: () => toast.error("Failed to disconnect account"),
   });
 
   const syncMutation = useMutation({
     mutationFn: (provider) => socialAPI.refresh(provider),
-    onSuccess: () => qc.invalidateQueries(["social_accounts"]),
+    onSuccess: () => {
+      qc.invalidateQueries(["social_accounts"]);
+      toast.success("Account synced");
+    },
+    onError: () => toast.error("Failed to sync account"),
   });
 
-  const handleConnect = async (provider) => {
-    // Open start endpoint in new tab (server should redirect to provider auth URL)
-    const url = `${
-      import.meta.env.VITE_API_URL || "http://localhost:5001"
-    }/api/social/start/${provider}`;
-    window.open(url, "_blank");
+  // Demo mode - connect with fake credentials
+  const connectDemoMutation = useMutation({
+    mutationFn: async ({ provider, handle }) => {
+      // Use the callback endpoint directly with demo tokens
+      const response = await socialAPI.callback(provider, {
+        accessToken: `demo_access_${Date.now()}`,
+        refreshToken: `demo_refresh_${Date.now()}`,
+        accountId: `demo_${provider}_${Date.now()}`,
+        accountHandle: handle || `demo_${provider}`,
+        accountName: `Demo ${
+          provider.charAt(0).toUpperCase() + provider.slice(1)
+        } Account`,
+        profileData: {
+          url: `https://${provider}.com/${handle || `demo_${provider}`}`,
+          followers: Math.floor(Math.random() * 10000),
+          bio: "Demo account for testing",
+        },
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries(["social_accounts"]);
+      toast.success("Demo account connected!");
+      setDemoModalOpen(false);
+      setDemoHandle("");
+      setSelectedProvider(null);
+    },
+    onError: (err) => {
+      toast.error(
+        err.response?.data?.message || "Failed to connect demo account"
+      );
+    },
+  });
+
+  const handleConnect = (provider) => {
+    setSelectedProvider(provider);
+    setDemoModalOpen(true);
   };
 
-  if (isLoading)
-    return <div className="p-6">Loading connected accounts...</div>;
-  if (isError)
-    return <div className="p-6 text-red-600">Failed to load accounts</div>;
+  const handleDemoConnect = () => {
+    if (selectedProvider) {
+      connectDemoMutation.mutate({
+        provider: selectedProvider.id,
+        handle: demoHandle || `demo_${selectedProvider.id}`,
+      });
+    }
+  };
 
   const accounts = data || [];
 
-  return (
-    <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold">Connected Accounts</h1>
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="shimmer h-48 rounded-2xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {providers.map((p) => {
-          const acct = accounts.find((a) => a.platform === p);
-          return (
-            <SocialAccountCard
-              key={p}
-              provider={p}
-              account={acct}
-              onConnect={handleConnect}
-              onDisconnect={(prov) => disconnectMutation.mutate(prov)}
-              onSync={(prov) => syncMutation.mutate(prov)}
-              syncing={syncMutation.isLoading}
-            />
-          );
-        })}
+  if (isError) {
+    return (
+      <div className="p-6">
+        <div className="max-w-md mx-auto text-center py-12">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+            Failed to load accounts
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
+            Please try again later
+          </p>
+          <button onClick={() => refetch()} className="btn-primary">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 fade-in">
+          <div>
+            <h1 className="text-4xl font-bold gradient-text">
+              Connected Accounts
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Manage your social media connections
+            </p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="btn-secondary inline-flex items-center"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </button>
+        </div>
+
+        {/* Info banner */}
+        <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 dark:from-indigo-500/20 dark:to-purple-500/20 rounded-2xl p-4 mb-6 flex items-start gap-3 border border-indigo-200 dark:border-indigo-800">
+          <Info className="w-5 h-5 text-indigo-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-indigo-800 dark:text-indigo-200">
+              <strong>Demo Mode:</strong> This is a demonstration environment.
+              Click "Connect" to add a simulated account for testing purposes.
+              In production, this would redirect to the actual OAuth flow for
+              each platform.
+            </p>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="card p-4 text-center">
+            <div className="text-3xl font-bold gradient-text">
+              {accounts.length}
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Connected
+            </div>
+          </div>
+          <div className="card p-4 text-center">
+            <div className="text-3xl font-bold text-gray-400">
+              {providers.length - accounts.length}
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Available
+            </div>
+          </div>
+          <div className="card p-4 text-center">
+            <div className="text-3xl font-bold text-green-500">
+              {accounts.filter((a) => a.status === "active").length}
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Active
+            </div>
+          </div>
+          <div className="card p-4 text-center">
+            <div className="text-3xl font-bold text-yellow-500">
+              {accounts.filter((a) => a.status !== "active").length}
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Needs Attention
+            </div>
+          </div>
+        </div>
+
+        {/* Account Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {providers.map((provider, index) => {
+            const account = accounts.find((a) => a.platform === provider.id);
+            const Icon = provider.icon;
+
+            return (
+              <div
+                key={provider.id}
+                className="card card-hover slide-up overflow-hidden"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                {/* Header with gradient */}
+                <div className={`h-2 bg-gradient-to-r ${provider.color}`}></div>
+
+                <div className="p-5">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-12 h-12 ${provider.bgColor} rounded-xl flex items-center justify-center shadow-lg`}
+                      >
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-800 dark:text-white">
+                          {provider.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {provider.description}
+                        </p>
+                      </div>
+                    </div>
+                    {account && (
+                      <div className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Connected
+                      </div>
+                    )}
+                  </div>
+
+                  {account ? (
+                    <div className="space-y-3">
+                      <div className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            {account.accountHandle?.charAt(0)?.toUpperCase() ||
+                              "?"}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-800 dark:text-white text-sm truncate">
+                              @{account.accountHandle}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {account.accountName}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {account.profileData?.followers && (
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {account.profileData.followers.toLocaleString()}{" "}
+                          followers
+                        </div>
+                      )}
+
+                      <div className="text-xs text-gray-400 dark:text-gray-500">
+                        Last sync:{" "}
+                        {account.lastSyncAt
+                          ? new Date(account.lastSyncAt).toLocaleString()
+                          : "Never"}
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2">
+                        <button
+                          onClick={() => syncMutation.mutate(provider.id)}
+                          disabled={syncMutation.isLoading}
+                          className="flex-1 btn-secondary py-2 text-sm flex items-center justify-center gap-1"
+                        >
+                          <RefreshCw
+                            className={`w-4 h-4 ${
+                              syncMutation.isLoading ? "animate-spin" : ""
+                            }`}
+                          />
+                          Sync
+                        </button>
+                        <button
+                          onClick={() => disconnectMutation.mutate(provider.id)}
+                          className="flex-1 py-2 px-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-1"
+                        >
+                          <Unlink className="w-4 h-4" />
+                          Disconnect
+                        </button>
+                        {account.profileData?.url && (
+                          <a
+                            href={account.profileData.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
+                          >
+                            <ExternalLink className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        Not connected
+                      </p>
+                      <button
+                        onClick={() => handleConnect(provider)}
+                        className="w-full btn-primary py-2.5 flex items-center justify-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Connect {provider.name}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Demo Connect Modal */}
+        {demoModalOpen && selectedProvider && (
+          <div
+            className="modal-overlay"
+            onClick={() => setDemoModalOpen(false)}
+          >
+            <div
+              className="modal-content max-w-md"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div
+                  className={`w-12 h-12 ${selectedProvider.bgColor} rounded-xl flex items-center justify-center shadow-lg`}
+                >
+                  <selectedProvider.icon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold gradient-text">
+                    Connect {selectedProvider.name}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Demo Mode
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 mb-6">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>Note:</strong> This is a demo connection. In
+                  production, you would be redirected to {selectedProvider.name}
+                  's OAuth page to authorize access.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Username / Handle
+                  </label>
+                  <input
+                    type="text"
+                    value={demoHandle}
+                    onChange={(e) => setDemoHandle(e.target.value)}
+                    placeholder={`e.g., my${selectedProvider.id}handle`}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setDemoModalOpen(false)}
+                  className="flex-1 btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDemoConnect}
+                  disabled={connectDemoMutation.isLoading}
+                  className="flex-1 btn-primary flex items-center justify-center gap-2"
+                >
+                  {connectDemoMutation.isLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <Link2 className="w-4 h-4" />
+                      Connect Demo
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

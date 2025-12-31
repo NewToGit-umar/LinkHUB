@@ -63,6 +63,8 @@ export const postsAPI = {
   create: (data) => api.post('/posts', data),
   list: () => api.get('/posts'),
   publish: (id) => api.post(`/posts/${id}/publish`),
+  cancel: (id) => api.delete(`/posts/${id}`),
+  update: (id, data) => api.put(`/posts/${id}`, data),
 }
 
 export const analyticsAPI = {

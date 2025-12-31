@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { postsAPI } from "../../services/api";
 import PostComposer from "../../components/PostComposer";
+import toast from "react-hot-toast";
 import {
   Plus,
   RefreshCw,
@@ -14,6 +15,8 @@ import {
   Calendar,
   ChevronRight,
   Sparkles,
+  Ban,
+  Trash2,
 } from "lucide-react";
 
 export default function Posts() {
@@ -32,8 +35,25 @@ export default function Posts() {
 
   const publishMutation = useMutation({
     mutationFn: (id) => postsAPI.publish(id),
-    onSuccess: () => qc.invalidateQueries(["posts"]),
+    onSuccess: () => {
+      qc.invalidateQueries(["posts"]);
+      toast.success("Post queued for publishing");
+    },
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to queue post"),
   });
+
+  const cancelMutation = useMutation({
+    mutationFn: (id) => postsAPI.cancel(id),
+    onSuccess: () => {
+      qc.invalidateQueries(["posts"]);
+      toast.success("Post cancelled successfully");
+      setSelected(null);
+    },
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to cancel post"),
+  });
+
   const [selected, setSelected] = useState(null);
 
   const getStatusIcon = (status) => {
@@ -47,6 +67,8 @@ export default function Posts() {
         return <XCircle className="w-4 h-4 text-red-500" />;
       case "publishing":
         return <RefreshCw className="w-4 h-4 text-yellow-500 animate-spin" />;
+      case "cancelled":
+        return <Ban className="w-4 h-4 text-gray-500" />;
       default:
         return <AlertCircle className="w-4 h-4 text-gray-500" />;
     }
@@ -59,9 +81,14 @@ export default function Posts() {
       queued: "badge-info",
       failed: "badge-error",
       publishing: "badge-warning",
+      cancelled: "bg-gray-200 text-gray-600",
       draft: "bg-gray-100 text-gray-700",
     };
     return badges[status] || "bg-gray-100 text-gray-700";
+  };
+
+  const canCancel = (status) => {
+    return ["draft", "scheduled", "queued", "failed"].includes(status);
   };
 
   return (
@@ -164,19 +191,40 @@ export default function Posts() {
                       {getStatusIcon(p.status)}
                       <span className="capitalize">{p.status}</span>
                     </div>
-                    {p.status !== "queued" &&
-                      p.status !== "publishing" &&
-                      p.status !== "published" && (
+                    <div className="flex gap-2">
+                      {p.status !== "queued" &&
+                        p.status !== "publishing" &&
+                        p.status !== "published" &&
+                        p.status !== "cancelled" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              publishMutation.mutate(p._id);
+                            }}
+                            className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl text-sm font-medium shadow-lg shadow-green-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+                          >
+                            Queue
+                          </button>
+                        )}
+                      {canCancel(p.status) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            publishMutation.mutate(p._id);
+                            if (
+                              confirm(
+                                "Are you sure you want to cancel this post?"
+                              )
+                            ) {
+                              cancelMutation.mutate(p._id);
+                            }
                           }}
-                          className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl text-sm font-medium shadow-lg shadow-green-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+                          className="px-4 py-2 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl text-sm font-medium shadow-lg shadow-red-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-1"
                         >
-                          Queue
+                          <Ban className="w-4 h-4" />
+                          Cancel
                         </button>
                       )}
+                    </div>
                     <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
                   </div>
                 </div>
@@ -283,6 +331,21 @@ export default function Posts() {
                     className="px-5 py-2.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all"
                   >
                     Retry
+                  </button>
+                )}
+                {canCancel(selected.status) && (
+                  <button
+                    onClick={() => {
+                      if (
+                        confirm("Are you sure you want to cancel this post?")
+                      ) {
+                        cancelMutation.mutate(selected._id);
+                      }
+                    }}
+                    className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+                  >
+                    <Ban className="w-4 h-4" />
+                    Cancel Post
                   </button>
                 )}
                 <button
