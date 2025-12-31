@@ -19,6 +19,7 @@ import {
   Sparkles,
   Plus,
   Info,
+  AlertTriangle,
 } from "lucide-react";
 
 const providers = [
@@ -78,6 +79,8 @@ export default function Accounts() {
   const [demoModalOpen, setDemoModalOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [demoHandle, setDemoHandle] = useState("");
+  const [disconnectConfirmOpen, setDisconnectConfirmOpen] = useState(false);
+  const [providerToDisconnect, setProviderToDisconnect] = useState(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["social_accounts"],
@@ -93,9 +96,26 @@ export default function Accounts() {
     onSuccess: () => {
       qc.invalidateQueries(["social_accounts"]);
       toast.success("Account disconnected");
+      setDisconnectConfirmOpen(false);
+      setProviderToDisconnect(null);
     },
-    onError: () => toast.error("Failed to disconnect account"),
+    onError: () => {
+      toast.error("Failed to disconnect account");
+      setDisconnectConfirmOpen(false);
+      setProviderToDisconnect(null);
+    },
   });
+
+  const handleDisconnectClick = (provider) => {
+    setProviderToDisconnect(provider);
+    setDisconnectConfirmOpen(true);
+  };
+
+  const confirmDisconnect = () => {
+    if (providerToDisconnect) {
+      disconnectMutation.mutate(providerToDisconnect.id);
+    }
+  };
 
   const syncMutation = useMutation({
     mutationFn: (provider) => socialAPI.refresh(provider),
@@ -347,7 +367,7 @@ export default function Accounts() {
                           Sync
                         </button>
                         <button
-                          onClick={() => disconnectMutation.mutate(provider.id)}
+                          onClick={() => handleDisconnectClick(provider)}
                           className="flex-1 py-2 px-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-1"
                         >
                           <Unlink className="w-4 h-4" />
@@ -455,6 +475,62 @@ export default function Accounts() {
                     <>
                       <Link2 className="w-4 h-4" />
                       Connect Demo
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Disconnect Confirmation Modal */}
+        {disconnectConfirmOpen && providerToDisconnect && (
+          <div
+            className="modal-overlay"
+            onClick={() => setDisconnectConfirmOpen(false)}
+          >
+            <div
+              className="modal-content max-w-md"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-col items-center text-center mb-6">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                  <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Disconnect {providerToDisconnect.name}?
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Are you sure you want to disconnect your{" "}
+                  {providerToDisconnect.name} account? You'll need to reconnect
+                  it to post or view analytics from this platform.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setDisconnectConfirmOpen(false);
+                    setProviderToDisconnect(null);
+                  }}
+                  className="flex-1 btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDisconnect}
+                  disabled={disconnectMutation.isLoading}
+                  className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  {disconnectMutation.isLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Disconnecting...
+                    </>
+                  ) : (
+                    <>
+                      <Unlink className="w-4 h-4" />
+                      Yes, Disconnect
                     </>
                   )}
                 </button>
