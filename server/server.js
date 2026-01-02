@@ -90,6 +90,9 @@ app.use('/api/profile', (await import('./routes/profile.js')).default);
 // Mount landing page routes (for admin-editable sample profile)
 app.use('/api/landing', (await import('./routes/landing.js')).default);
 
+// Mount public profile routes (shareable profiles)
+app.use('/api/u', (await import('./routes/publicProfile.js')).default);
+
 // Serve static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

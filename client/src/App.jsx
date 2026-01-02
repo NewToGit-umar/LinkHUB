@@ -18,6 +18,7 @@ import Analytics from "./pages/Analytics/Analytics";
 import BioList from "./pages/Bio/BioList";
 import BioEditor from "./pages/Bio/BioEditor";
 import BioPageView from "./pages/Bio/BioPageView";
+import PublicProfile from "./pages/Profile/PublicProfile";
 import Links from "./pages/Links/Links";
 import TeamList from "./pages/Teams/TeamList";
 import TeamDashboard from "./pages/Teams/TeamDashboard";
@@ -188,6 +189,8 @@ function AppContent() {
         />
         {/* Public bio page view */}
         <Route path="/p/:slug" element={<BioPageView />} />
+        {/* Public profile view - shareable link */}
+        <Route path="/u/:username" element={<PublicProfile />} />
         <Route
           path="/links"
           element={

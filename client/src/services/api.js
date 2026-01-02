@@ -176,4 +176,11 @@ export const landingAPI = {
   })
 }
 
+export const publicProfileAPI = {
+  getProfile: (username) => api.get(`/u/${username}`),
+  trackView: (username, data) => api.post(`/u/${username}/view`, data),
+  trackClick: (username, linkId) => api.post(`/u/${username}/click/${linkId}`),
+  checkUsername: (username) => api.get(`/u/check/${username}`)
+}
+
 export default api

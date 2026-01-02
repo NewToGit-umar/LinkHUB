@@ -22,6 +22,9 @@ import {
   X,
   Check,
   Move,
+  Share2,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
 
 // Image Cropper Modal Component
@@ -358,6 +361,7 @@ export default function Profile() {
     confirm: false,
   });
   const [changingPassword, setChangingPassword] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -536,6 +540,48 @@ export default function Profile() {
     }${profile.avatar}`;
   };
 
+  // Generate username from email
+  const getUsername = () => {
+    return profile.email
+      .split("@")[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+  };
+
+  // Get shareable profile URL
+  const getProfileUrl = () => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/u/${getUsername()}`;
+  };
+
+  // Handle share profile
+  const handleShareProfile = async () => {
+    const profileUrl = getProfileUrl();
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${profile.name}'s LinkHub Profile`,
+          text: `Check out ${profile.name}'s profile on LinkHub`,
+          url: profileUrl,
+        });
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          copyProfileLink(profileUrl);
+        }
+      }
+    } else {
+      copyProfileLink(profileUrl);
+    }
+  };
+
+  const copyProfileLink = (url) => {
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    toast.success("Profile link copied to clipboard!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -556,7 +602,36 @@ export default function Profile() {
       )}
 
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-8">Edit Profile</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-white">Edit Profile</h1>
+          <div className="flex items-center gap-3">
+            <a
+              href={getProfileUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              View Public Profile
+            </a>
+            <button
+              onClick={handleShareProfile}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium transition-colors"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-4 h-4" />
+                  Share Profile
+                </>
+              )}
+            </button>
+          </div>
+        </div>
 
         {/* Avatar Section */}
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-slate-700/50">
@@ -619,6 +694,43 @@ export default function Profile() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Share Profile Link Section */}
+        <div className="bg-gradient-to-r from-emerald-900/50 to-lime-900/50 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-emerald-500/30">
+          <h2 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+            <Share2 className="w-5 h-5 text-emerald-400" />
+            Share Your Profile
+          </h2>
+          <p className="text-gray-400 text-sm mb-4">
+            Share your public profile link with others to showcase your social
+            accounts, links, and analytics.
+          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 flex items-center">
+              <span className="text-emerald-400 text-sm truncate">
+                {getProfileUrl()}
+              </span>
+            </div>
+            <button
+              onClick={() => copyProfileLink(getProfileUrl())}
+              className="p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors flex-shrink-0"
+            >
+              {copied ? (
+                <Check className="w-5 h-5" />
+              ) : (
+                <Copy className="w-5 h-5" />
+              )}
+            </button>
+            <a
+              href={getProfileUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors flex-shrink-0"
+            >
+              <ExternalLink className="w-5 h-5" />
+            </a>
           </div>
         </div>
 
