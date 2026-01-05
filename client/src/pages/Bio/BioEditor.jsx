@@ -14,6 +14,11 @@ import {
   Moon,
   ChevronDown,
   ChevronUp,
+  Plus,
+  Trash2,
+  GripVertical,
+  Link2,
+  ExternalLink,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -198,6 +203,44 @@ export default function BioEditor() {
   const selectedTheme =
     colorThemes.find((t) => t.id === page.settings?.theme) || colorThemes[0];
 
+  // Link management functions
+  function addLink() {
+    setPage((prev) => ({
+      ...prev,
+      links: [...(prev.links || []), { title: "", url: "", id: Date.now() }],
+    }));
+  }
+
+  function removeLink(index) {
+    setPage((prev) => ({
+      ...prev,
+      links: prev.links.filter((_, i) => i !== index),
+    }));
+  }
+
+  function updateLink(index, field, value) {
+    setPage((prev) => ({
+      ...prev,
+      links: prev.links.map((link, i) =>
+        i === index ? { ...link, [field]: value } : link
+      ),
+    }));
+  }
+
+  function moveLink(fromIndex, direction) {
+    const toIndex = direction === "up" ? fromIndex - 1 : fromIndex + 1;
+    if (toIndex < 0 || toIndex >= page.links.length) return;
+
+    setPage((prev) => {
+      const newLinks = [...prev.links];
+      [newLinks[fromIndex], newLinks[toIndex]] = [
+        newLinks[toIndex],
+        newLinks[fromIndex],
+      ];
+      return { ...prev, links: newLinks };
+    });
+  }
+
   return (
     <div className="p-6">
       <div className="max-w-6xl mx-auto">
@@ -287,6 +330,91 @@ export default function BioEditor() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Links Management Card */}
+              <div className="card slide-up" style={{ animationDelay: "50ms" }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                    <Link2 className="w-5 h-5 text-indigo-500" />
+                    Links
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={addLink}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg text-sm font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Link
+                  </button>
+                </div>
+
+                {!page.links || page.links.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <Link2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No links added yet</p>
+                    <p className="text-xs mt-1">
+                      Click "Add Link" to create your first link
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {page.links.map((link, index) => (
+                      <div
+                        key={link.id || index}
+                        className="p-4 bg-gray-50 dark:bg-slate-700/50 rounded-xl border border-gray-200 dark:border-slate-600"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex flex-col gap-1 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => moveLink(index, "up")}
+                              disabled={index === 0}
+                              className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <ChevronUp className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveLink(index, "down")}
+                              disabled={index === page.links.length - 1}
+                              className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <ChevronDown className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="flex-1 space-y-3">
+                            <input
+                              type="text"
+                              value={link.title || ""}
+                              onChange={(e) =>
+                                updateLink(index, "title", e.target.value)
+                              }
+                              placeholder="Link Title"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-800 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            />
+                            <input
+                              type="url"
+                              value={link.url || ""}
+                              onChange={(e) =>
+                                updateLink(index, "url", e.target.value)
+                              }
+                              placeholder="https://example.com"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-800 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeLink(index)}
+                            className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Theme Customization Card */}
@@ -550,15 +678,25 @@ export default function BioEditor() {
 
                           {/* Sample links */}
                           <div className="space-y-2">
-                            {["Link 1", "Link 2", "Link 3"].map((link, i) => {
+                            {(page.links && page.links.length > 0
+                              ? page.links
+                              : [
+                                  { title: "Link 1", url: "#" },
+                                  { title: "Link 2", url: "#" },
+                                  { title: "Link 3", url: "#" },
+                                ]
+                            ).map((link, i) => {
                               const btnStyle =
                                 buttonStyles.find(
                                   (s) => s.id === page.settings?.buttonStyle
                                 ) || buttonStyles[0];
                               return (
-                                <div
-                                  key={i}
-                                  className={`py-2 px-4 text-white text-xs font-medium ${btnStyle.class} transition-transform hover:scale-[1.02]`}
+                                <a
+                                  key={link.id || i}
+                                  href={link.url || "#"}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`block py-2 px-4 text-white text-xs font-medium ${btnStyle.class} transition-transform hover:scale-[1.02] cursor-pointer`}
                                   style={{
                                     background:
                                       btnStyle.id === "outline"
@@ -573,9 +711,14 @@ export default function BioEditor() {
                                         ? selectedTheme.primary
                                         : "white",
                                   }}
+                                  onClick={(e) => {
+                                    if (!link.url || link.url === "#") {
+                                      e.preventDefault();
+                                    }
+                                  }}
                                 >
-                                  {link}
-                                </div>
+                                  {link.title || `Link ${i + 1}`}
+                                </a>
                               );
                             })}
                           </div>

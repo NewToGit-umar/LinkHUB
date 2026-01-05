@@ -255,7 +255,7 @@ export default function TeamDashboard() {
                   type="email"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-800 placeholder:text-gray-400"
                   placeholder="colleague@example.com"
                   required
                 />
@@ -267,7 +267,7 @@ export default function TeamDashboard() {
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-800"
                 >
                   <option value="viewer">Viewer</option>
                   <option value="editor">Editor</option>

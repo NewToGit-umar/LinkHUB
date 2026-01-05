@@ -4,19 +4,12 @@ import SocialAccount from '../models/SocialAccount.js'
 import twitterProvider from './providers/twitter.js'
 import facebookProvider from './providers/facebook.js'
 import instagramProvider from './providers/instagram.js'
+import linkedinProvider from './providers/linkedin.js'
+import youtubeProvider from './providers/youtube.js'
+import tiktokProvider from './providers/tiktok.js'
+import * as socketService from './socketService.js'
 
-// Placeholder analytics fetcher service.
-// Real provider integrations should replace the per-provider stubs below.
-
-function randomMetrics() {
-  return {
-    likes: Math.floor(Math.random() * 50),
-    shares: Math.floor(Math.random() * 10),
-    comments: Math.floor(Math.random() * 8),
-    impressions: Math.floor(Math.random() * 1000),
-    reach: Math.floor(Math.random() * 800)
-  }
-}
+// Real analytics fetcher service using actual provider APIs
 
 async function fetchForTwitter(account) {
   try {
@@ -25,8 +18,7 @@ async function fetchForTwitter(account) {
   } catch (err) {
     console.error('twitterProvider error', err)
   }
-  const recent = await Post.find({ userId: account.userId, platforms: 'twitter' }).sort({ publishedAt: -1 }).limit(10)
-  return recent.map(p => ({ postId: p._id, metrics: randomMetrics(), recordedAt: p.publishedAt || new Date() }))
+  return []
 }
 
 async function fetchForFacebook(account) {
@@ -36,8 +28,7 @@ async function fetchForFacebook(account) {
   } catch (err) {
     console.error('facebookProvider error', err)
   }
-  const recent = await Post.find({ userId: account.userId, platforms: 'facebook' }).sort({ publishedAt: -1 }).limit(10)
-  return recent.map(p => ({ postId: p._id, metrics: randomMetrics(), recordedAt: p.publishedAt || new Date() }))
+  return []
 }
 
 async function fetchForInstagram(account) {
@@ -47,8 +38,37 @@ async function fetchForInstagram(account) {
   } catch (err) {
     console.error('instagramProvider error', err)
   }
-  const recent = await Post.find({ userId: account.userId, platforms: 'instagram' }).sort({ publishedAt: -1 }).limit(10)
-  return recent.map(p => ({ postId: p._id, metrics: randomMetrics(), recordedAt: p.publishedAt || new Date() }))
+  return []
+}
+
+async function fetchForLinkedIn(account) {
+  try {
+    const r = await linkedinProvider.fetchAnalytics(account)
+    if (r && r.length) return r
+  } catch (err) {
+    console.error('linkedinProvider error', err)
+  }
+  return []
+}
+
+async function fetchForYouTube(account) {
+  try {
+    const r = await youtubeProvider.fetchAnalytics(account)
+    if (r && r.length) return r
+  } catch (err) {
+    console.error('youtubeProvider error', err)
+  }
+  return []
+}
+
+async function fetchForTikTok(account) {
+  try {
+    const r = await tiktokProvider.fetchAnalytics(account)
+    if (r && r.length) return r
+  } catch (err) {
+    console.error('tiktokProvider error', err)
+  }
+  return []
 }
 
 export async function fetchAnalyticsForAccount(account) {
@@ -58,6 +78,9 @@ export async function fetchAnalyticsForAccount(account) {
       case 'twitter': return await fetchForTwitter(account)
       case 'facebook': return await fetchForFacebook(account)
       case 'instagram': return await fetchForInstagram(account)
+      case 'linkedin': return await fetchForLinkedIn(account)
+      case 'youtube': return await fetchForYouTube(account)
+      case 'tiktok': return await fetchForTikTok(account)
       default: return []
     }
   } catch (err) {
@@ -71,22 +94,36 @@ export async function ingestForUser(userId) {
   const accounts = await SocialAccount.find({ userId })
   let ingested = 0
   for (const acc of accounts) {
+    // Skip if account token is not valid
+    if (!acc.isValid || !acc.isValid()) continue
+
     const providerData = await fetchAnalyticsForAccount(acc)
     if (!providerData || providerData.length === 0) {
-      // fallback: zeroed metrics for recent posts
-      const recent = await Post.find({ userId, platforms: acc.platform }).sort({ publishedAt: -1 }).limit(10)
-      for (const p of recent) {
-        await Analytics.create({ postId: p._id, userId, platform: acc.platform, metrics: { likes:0, shares:0, comments:0, impressions:0, reach:0 }, recordedAt: new Date() })
-        ingested++
-      }
       continue
     }
 
     for (const item of providerData) {
-      await Analytics.create({ postId: item.postId || null, userId, platform: acc.platform, metrics: item.metrics || {}, recordedAt: item.recordedAt ? new Date(item.recordedAt) : new Date() })
+      await Analytics.create({ 
+        postId: item.postId || null, 
+        externalId: item.externalId || null,
+        userId, 
+        platform: acc.platform, 
+        metrics: item.metrics || {}, 
+        recordedAt: item.recordedAt ? new Date(item.recordedAt) : new Date() 
+      })
       ingested++
     }
   }
+
+  // Send real-time notification if analytics were ingested
+  if (ingested > 0) {
+    try {
+      socketService.notifyAnalyticsUpdate(userId.toString(), { ingested })
+    } catch (err) {
+      // Socket might not be initialized yet
+    }
+  }
+
   return ingested
 }
 

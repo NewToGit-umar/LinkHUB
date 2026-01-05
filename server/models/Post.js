@@ -5,6 +5,7 @@ const { Schema, models } = mongoose
 const MediaSchema = new Schema({
   url: { type: String, required: true },
   type: { type: String, enum: ['image', 'video', 'link', 'other'], default: 'image' },
+  filename: { type: String }, // For uploaded files
   meta: { type: Schema.Types.Mixed }
 }, { _id: false })
 
@@ -19,6 +20,16 @@ const PostSchema = new Schema({
     required: true,
     index: true
   },
+  // YouTube-specific fields
+  title: { type: String, maxlength: 100 }, // Video title for YouTube
+  tags: { type: [String], default: [] }, // Tags for YouTube
+  visibility: { 
+    type: String, 
+    enum: ['public', 'private', 'unlisted'], 
+    default: 'public' 
+  }, // Privacy setting for YouTube
+  categoryId: { type: String, default: '22' }, // YouTube category (22 = People & Blogs)
+  
   scheduledAt: { type: Date, index: true },
   status: {
     type: String,
@@ -29,7 +40,8 @@ const PostSchema = new Schema({
   publishResult: { type: Schema.Types.Mixed },
   attempts: { type: Number, default: 0 },
   lastError: { type: String },
-  metadata: { type: Schema.Types.Mixed, default: {} }
+  metadata: { type: Schema.Types.Mixed, default: {} },
+  cancelledAt: { type: Date } // Timestamp when post was cancelled
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

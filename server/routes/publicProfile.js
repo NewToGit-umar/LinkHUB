@@ -82,6 +82,20 @@ router.get('/:identifier', async (req, res) => {
     const postCount = await Post.countDocuments({ userId: user._id })
     
     // Build response
+    // Platform URL patterns
+    const getPlatformUrl = (platform, handle, savedUrl) => {
+      if (savedUrl) return savedUrl
+      const urls = {
+        twitter: `https://twitter.com/${handle}`,
+        instagram: `https://instagram.com/${handle}`,
+        facebook: `https://facebook.com/${handle}`,
+        linkedin: `https://linkedin.com/in/${handle}`,
+        youtube: `https://youtube.com/@${handle}`,
+        tiktok: `https://tiktok.com/@${handle}`
+      }
+      return urls[platform] || `https://${platform}.com/${handle}`
+    }
+
     const profileData = {
       id: user._id,
       name: user.name,
@@ -97,8 +111,9 @@ router.get('/:identifier', async (req, res) => {
         handle: acc.accountHandle,
         name: acc.accountName || acc.profileData?.displayName,
         profilePicture: acc.profileData?.profilePicture,
-        followers: acc.profileData?.followerCount,
-        url: acc.profileData?.url || `https://${acc.platform}.com/${acc.accountHandle}`
+        followers: acc.profileData?.followerCount || 0,
+        postsCount: acc.profileData?.postsCount || 0,
+        url: getPlatformUrl(acc.platform, acc.accountHandle, acc.profileData?.url)
       })),
       stats: {
         totalClicks: totalClicks + (analytics?.totalStats?.clicks || 0),

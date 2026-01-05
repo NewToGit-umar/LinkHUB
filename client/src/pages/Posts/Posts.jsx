@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { postsAPI } from "../../services/api";
 import PostComposer from "../../components/PostComposer";
@@ -17,10 +17,15 @@ import {
   Link2,
   Ban,
   Trash2,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 
 export default function Posts() {
   const [open, setOpen] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [postToCancel, setPostToCancel] = useState(null);
+
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["posts"],
     queryFn: async () => {
@@ -30,7 +35,20 @@ export default function Posts() {
     staleTime: 0,
   });
 
-  const posts = data || [];
+  // Filter out cancelled posts older than 30 minutes (or all cancelled posts without cancelledAt timestamp)
+  const posts = useMemo(() => {
+    if (!data) return [];
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+    return data.filter((post) => {
+      if (post.status === "cancelled") {
+        // If no cancelledAt timestamp, hide the post (it's an old cancelled post)
+        if (!post.cancelledAt) return false;
+        // Only show cancelled posts that are less than 30 minutes old
+        return new Date(post.cancelledAt) > thirtyMinutesAgo;
+      }
+      return true;
+    });
+  }, [data]);
   const qc = useQueryClient();
 
   const publishMutation = useMutation({
@@ -49,10 +67,24 @@ export default function Posts() {
       qc.invalidateQueries(["posts"]);
       toast.success("Post cancelled successfully");
       setSelected(null);
+      setShowCancelModal(false);
+      setPostToCancel(null);
     },
     onError: (err) =>
       toast.error(err.response?.data?.message || "Failed to cancel post"),
   });
+
+  const handleCancelClick = (postId, e) => {
+    if (e) e.stopPropagation();
+    setPostToCancel(postId);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancel = () => {
+    if (postToCancel) {
+      cancelMutation.mutate(postToCancel);
+    }
+  };
 
   const [selected, setSelected] = useState(null);
 
@@ -208,16 +240,7 @@ export default function Posts() {
                         )}
                       {canCancel(p.status) && (
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (
-                              confirm(
-                                "Are you sure you want to cancel this post?"
-                              )
-                            ) {
-                              cancelMutation.mutate(p._id);
-                            }
-                          }}
+                          onClick={(e) => handleCancelClick(p._id, e)}
                           className="px-4 py-2 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl text-sm font-medium shadow-lg shadow-red-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-1"
                         >
                           <Ban className="w-4 h-4" />
@@ -335,13 +358,7 @@ export default function Posts() {
                 )}
                 {canCancel(selected.status) && (
                   <button
-                    onClick={() => {
-                      if (
-                        confirm("Are you sure you want to cancel this post?")
-                      ) {
-                        cancelMutation.mutate(selected._id);
-                      }
-                    }}
+                    onClick={() => handleCancelClick(selected._id)}
                     className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
                   >
                     <Ban className="w-4 h-4" />
@@ -353,6 +370,71 @@ export default function Posts() {
                   className="btn-secondary"
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cancel Confirmation Modal */}
+        {showCancelModal && (
+          <div
+            className="modal-overlay"
+            onClick={() => setShowCancelModal(false)}
+          >
+            <div
+              className="modal-content max-w-md"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                    Cancel Post?
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-3">
+                    Are you sure you want to cancel this post? This action
+                    cannot be undone.
+                  </p>
+                  <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg p-3">
+                    <p className="text-amber-800 dark:text-amber-200 text-sm flex items-center gap-2">
+                      <Clock className="w-4 h-4 flex-shrink-0" />
+                      <span>
+                        Cancelled posts will automatically disappear from your
+                        posts list after <strong>30 minutes</strong>.
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t dark:border-gray-700">
+                <button
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setPostToCancel(null);
+                  }}
+                  className="btn-secondary"
+                >
+                  Keep Post
+                </button>
+                <button
+                  onClick={confirmCancel}
+                  disabled={cancelMutation.isPending}
+                  className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {cancelMutation.isPending ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Cancelling...
+                    </>
+                  ) : (
+                    <>
+                      <Ban className="w-4 h-4" />
+                      Yes, Cancel Post
+                    </>
+                  )}
                 </button>
               </div>
             </div>

@@ -18,6 +18,11 @@ export async function createBioPage(req, res) {
     const { title, slug, description, links, isPublic } = req.body
     let finalSlug = slug ? slugify(slug) : slugify(title || userId)
 
+    // Filter out incomplete links
+    const filteredLinks = (links && Array.isArray(links)) 
+      ? links.filter(link => link.title && link.url) 
+      : []
+
     // ensure uniqueness
     let existing = await BioPage.findOne({ slug: finalSlug })
     let suffix = 1
@@ -26,7 +31,7 @@ export async function createBioPage(req, res) {
       existing = await BioPage.findOne({ slug: finalSlug })
     }
 
-    const page = await BioPage.create({ userId, title, slug: finalSlug, description, links, isPublic })
+    const page = await BioPage.create({ userId, title, slug: finalSlug, description, links: filteredLinks, isPublic })
     return res.status(201).json({ page })
   } catch (err) {
     console.error('createBioPage error', err)
@@ -86,16 +91,40 @@ export async function updateBioPage(req, res) {
     if (!userId) return res.status(401).json({ message: 'Unauthorized' })
 
     const { id } = req.params
-    const updates = req.body
+    const updates = { ...req.body }
+    
+    // Filter out incomplete links (those without both title and url)
+    if (updates.links && Array.isArray(updates.links)) {
+      updates.links = updates.links
+        .filter(link => link.title && link.url)
+        .map(link => ({
+          title: link.title,
+          url: link.url,
+          position: link.position || 0,
+          openInNewTab: link.openInNewTab !== false,
+          clicks: link.clicks || 0
+        }))
+    }
+    
+    // Remove _id from updates to avoid immutable field error
+    delete updates._id
+    
     const page = await BioPage.findById(id)
     if (!page) return res.status(404).json({ message: 'Bio page not found' })
     if (String(page.userId) !== String(userId)) return res.status(403).json({ message: 'Forbidden' })
 
-    Object.assign(page, updates)
+    // Update fields individually
+    if (updates.title !== undefined) page.title = updates.title
+    if (updates.slug !== undefined) page.slug = updates.slug
+    if (updates.description !== undefined) page.description = updates.description
+    if (updates.links !== undefined) page.links = updates.links
+    if (updates.isPublic !== undefined) page.isPublic = updates.isPublic
+    if (updates.settings !== undefined) page.settings = updates.settings
+    
     await page.save()
     return res.status(200).json({ page })
   } catch (err) {
-    console.error('updateBioPage error', err)
+    console.error('updateBioPage error', err.message, err.stack)
     return res.status(500).json({ message: 'Error updating bio page', error: err.message })
   }
 }

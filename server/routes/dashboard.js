@@ -11,28 +11,35 @@ router.get('/', auth, async (req, res) => {
   try {
     const userId = req.user.id
 
-    // Get total posts count
-    const totalPosts = await Post.countDocuments({ user: userId })
+    // Get total posts count (exclude cancelled posts)
+    const totalPosts = await Post.countDocuments({ 
+      userId: userId,
+      status: { $ne: 'cancelled' }
+    })
 
     // Get scheduled posts count
     const scheduledPosts = await Post.countDocuments({ 
-      user: userId, 
+      userId: userId, 
       status: 'scheduled' 
     })
 
     // Get connected accounts count
     const connectedAccounts = await SocialAccount.countDocuments({ 
-      user: userId 
+      userId: userId 
     })
 
     // Get total engagement from analytics
-    const analyticsData = await Analytics.find({ user: userId })
+    const analyticsData = await Analytics.find({ userId: userId })
     const totalEngagement = analyticsData.reduce((sum, a) => {
-      return sum + (a.likes || 0) + (a.comments || 0) + (a.shares || 0) + (a.impressions || 0)
+      const metrics = a.metrics || {}
+      return sum + (metrics.likes || 0) + (metrics.comments || 0) + (metrics.shares || 0) + (metrics.impressions || 0)
     }, 0)
 
-    // Get recent posts (last 5)
-    const recentPosts = await Post.find({ user: userId })
+    // Get recent posts (last 5, exclude cancelled)
+    const recentPosts = await Post.find({ 
+      userId: userId,
+      status: { $ne: 'cancelled' }
+    })
       .sort({ createdAt: -1 })
       .limit(5)
       .select('content status createdAt')

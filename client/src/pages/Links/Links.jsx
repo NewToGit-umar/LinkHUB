@@ -321,7 +321,7 @@ export default function Links() {
                     onChange={(e) =>
                       setNewLink((prev) => ({ ...prev, title: e.target.value }))
                     }
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl bg-white text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     placeholder="My Website"
                     required
                   />
@@ -336,7 +336,7 @@ export default function Links() {
                     onChange={(e) =>
                       setNewLink((prev) => ({ ...prev, url: e.target.value }))
                     }
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl bg-white text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     placeholder="https://example.com"
                     required
                   />
@@ -353,7 +353,7 @@ export default function Links() {
                         description: e.target.value,
                       }))
                     }
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl bg-white text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
                     placeholder="A short description..."
                     rows={2}
                   />
@@ -400,7 +400,7 @@ export default function Links() {
                         title: e.target.value,
                       }))
                     }
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl bg-white text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     required
                   />
                 </div>
@@ -417,7 +417,7 @@ export default function Links() {
                         url: e.target.value,
                       }))
                     }
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl bg-white text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     required
                   />
                 </div>
@@ -433,7 +433,7 @@ export default function Links() {
                         description: e.target.value,
                       }))
                     }
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl bg-white text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
                     rows={2}
                   />
                 </div>

@@ -1,6 +1,7 @@
 import TeamInvitation from '../models/TeamInvitation.js'
 import Team from '../models/Team.js'
 import User from '../models/User.js'
+import * as socketService from '../services/socketService.js'
 
 // Create invitation
 export async function createInvitation(req, res) {
@@ -46,12 +47,25 @@ export async function createInvitation(req, res) {
       message
     })
 
+    const inviteLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/invite/${invitation.token}`
+
+    // Send real-time notification if user exists and is online
+    if (existingUser) {
+      socketService.notifyTeamInvitation(existingUser._id.toString(), {
+        teamName: team.name,
+        teamSlug: team.slug,
+        role,
+        inviteLink,
+        token: invitation.token
+      })
+    }
+
     // In production, send email here
     // await sendInvitationEmail(email, invitation.token, team.name)
 
     return res.status(201).json({
       invitation,
-      inviteLink: `${process.env.CLIENT_URL || 'http://localhost:5173'}/invite/${invitation.token}`
+      inviteLink
     })
   } catch (err) {
     console.error('createInvitation error', err)
@@ -149,6 +163,14 @@ export async function acceptInvitation(req, res) {
 
     // Mark invitation as accepted
     await invitation.accept()
+
+    // Send real-time notification to team members
+    socketService.notifyTeamMemberJoined(team._id.toString(), {
+      userId: user._id.toString(),
+      username: user.username || user.name,
+      email: user.email,
+      role: invitation.role
+    })
 
     return res.status(200).json({ message: 'Invitation accepted', team })
   } catch (err) {

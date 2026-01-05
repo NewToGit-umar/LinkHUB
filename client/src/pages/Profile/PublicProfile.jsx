@@ -23,6 +23,7 @@ import {
   Users,
   CheckCircle,
   Sparkles,
+  Music2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -99,16 +100,40 @@ const SocialAccountCard = ({ account, onVisit }) => {
   };
   const Icon = config.icon;
 
+  // Format followers count
+  const formatFollowers = (count) => {
+    if (!count || count === 0) return null;
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
+  };
+
+  const followerLabel =
+    account.platform === "youtube"
+      ? "subscribers"
+      : account.platform === "linkedin"
+      ? "connections"
+      : "followers";
+
   return (
     <a
       href={account.url}
       target="_blank"
       rel="noopener noreferrer"
       onClick={onVisit}
-      className={`flex items-center gap-3 p-4 ${config.color} ${config.hoverColor} rounded-xl transition-all transform hover:scale-[1.02] group`}
+      className={`flex items-center gap-3 p-4 ${config.color} ${config.hoverColor} rounded-xl transition-all transform hover:scale-[1.02] group cursor-pointer`}
     >
-      <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-        <Icon className="w-5 h-5 text-white" />
+      {/* Profile Picture or Platform Icon */}
+      <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
+        {account.profilePicture ? (
+          <img
+            src={account.profilePicture}
+            alt={account.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <Icon className="w-6 h-6 text-white" />
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-white truncate">
@@ -116,17 +141,18 @@ const SocialAccountCard = ({ account, onVisit }) => {
         </p>
         <p className="text-sm text-white/70 truncate">@{account.handle}</p>
       </div>
-      {account.followers > 0 && (
-        <div className="text-right">
-          <p className="text-sm font-medium text-white">
-            {account.followers >= 1000
-              ? `${(account.followers / 1000).toFixed(1)}K`
-              : account.followers}
-          </p>
-          <p className="text-xs text-white/70">followers</p>
-        </div>
-      )}
-      <ExternalLink className="w-4 h-4 text-white/50 group-hover:text-white transition-colors" />
+      {/* Stats */}
+      <div className="flex items-center gap-3">
+        {formatFollowers(account.followers) && (
+          <div className="text-right">
+            <p className="text-sm font-bold text-white">
+              {formatFollowers(account.followers)}
+            </p>
+            <p className="text-xs text-white/70">{followerLabel}</p>
+          </div>
+        )}
+        <ExternalLink className="w-5 h-5 text-white/50 group-hover:text-white transition-colors" />
+      </div>
     </a>
   );
 };

@@ -8,7 +8,17 @@ export async function createPost(req, res) {
     const userId = req.user && req.user.id
     if (!userId) return res.status(401).json({ message: 'Unauthorized' })
 
-    const { content, media = [], platforms = [], scheduledAt } = req.body
+    const { 
+      content, 
+      media = [], 
+      platforms = [], 
+      scheduledAt,
+      // YouTube-specific fields
+      title,
+      tags,
+      visibility,
+      categoryId
+    } = req.body
 
     if (!Array.isArray(platforms) || platforms.length === 0) {
       return res.status(400).json({ message: 'At least one platform is required' })
@@ -19,11 +29,26 @@ export async function createPost(req, res) {
       return res.status(400).json({ message: 'Invalid platforms', invalid })
     }
 
+    // YouTube requires video content and title
+    if (platforms.includes('youtube')) {
+      const hasVideo = media.some(m => m.type === 'video')
+      if (!hasVideo) {
+        return res.status(400).json({ message: 'YouTube requires video content' })
+      }
+      if (!title || title.trim().length === 0) {
+        return res.status(400).json({ message: 'YouTube requires a video title' })
+      }
+    }
+
     const postData = {
       userId,
       content: content || '',
       media,
       platforms,
+      title,
+      tags: tags || [],
+      visibility: visibility || 'public',
+      categoryId: categoryId || '22'
     }
 
     if (scheduledAt) {
@@ -37,7 +62,7 @@ export async function createPost(req, res) {
 
     // Send notification for scheduled posts
     if (post.scheduledAt) {
-      const postTitle = post.content ? post.content.substring(0, 50) : 'Untitled'
+      const postTitle = post.title || (post.content ? post.content.substring(0, 50) : 'Untitled')
       await notifyPostScheduled(userId, post._id, post.scheduledAt, postTitle)
     }
 
@@ -110,6 +135,7 @@ export async function deletePost(req, res) {
 
     // Soft-cancel the post for auditability
     post.status = 'cancelled'
+    post.cancelledAt = new Date()
     await post.save()
     return res.status(200).json({ message: 'Post cancelled' })
   } catch (err) {

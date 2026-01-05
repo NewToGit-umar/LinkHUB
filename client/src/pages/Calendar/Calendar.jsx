@@ -29,9 +29,22 @@ export default function Calendar() {
     staleTime: 0,
   });
 
+  // Filter out cancelled posts
+  const posts = useMemo(() => {
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+    return rawPosts.filter((post) => {
+      if (post.status === "cancelled") {
+        // Hide all cancelled posts without timestamp or older than 30 minutes
+        if (!post.cancelledAt) return false;
+        return new Date(post.cancelledAt) > thirtyMinutesAgo;
+      }
+      return true;
+    });
+  }, [rawPosts]);
+
   const scheduledByDate = useMemo(() => {
     const map = {};
-    for (const p of rawPosts) {
+    for (const p of posts) {
       if (!p.scheduledAt) continue;
       const dt = new Date(p.scheduledAt);
       const key = formatDateKey(dt);
@@ -39,7 +52,7 @@ export default function Calendar() {
       map[key].push(p);
     }
     return map;
-  }, [rawPosts]);
+  }, [posts]);
 
   const monthStart = startOfMonth(cursor);
   const monthEnd = new Date(

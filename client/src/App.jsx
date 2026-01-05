@@ -22,12 +22,14 @@ import PublicProfile from "./pages/Profile/PublicProfile";
 import Links from "./pages/Links/Links";
 import TeamList from "./pages/Teams/TeamList";
 import TeamDashboard from "./pages/Teams/TeamDashboard";
+import JoinTeam from "./pages/Teams/JoinTeam";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import PrivacySettings from "./pages/Settings/PrivacySettings";
 import Profile from "./pages/Profile/Profile";
 import PrivacyPolicy from "./pages/Legal/PrivacyPolicy";
 import TermsOfService from "./pages/Legal/TermsOfService";
 import Contact from "./pages/Legal/Contact";
+import { NotificationToast } from "./components/NotificationToast";
 
 const queryClient = new QueryClient();
 
@@ -191,6 +193,8 @@ function AppContent() {
         <Route path="/p/:slug" element={<BioPageView />} />
         {/* Public profile view - shareable link */}
         <Route path="/u/:username" element={<PublicProfile />} />
+        {/* Team invite link - join via shareable link */}
+        <Route path="/join/:slug/:code" element={<JoinTeam />} />
         <Route
           path="/links"
           element={
@@ -251,6 +255,7 @@ function AppContent() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster position="top-right" />
+      <NotificationToast />
     </div>
   );
 }

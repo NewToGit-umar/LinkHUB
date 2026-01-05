@@ -45,8 +45,8 @@ export default function Analytics() {
   const { data: accountsData } = useQuery({
     queryKey: ["socialAccounts"],
     queryFn: async () => {
-      const r = await socialAPI.getAccounts();
-      return r.data;
+      const r = await socialAPI.list();
+      return r.data.accounts;
     },
   });
 

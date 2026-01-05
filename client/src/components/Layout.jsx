@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
@@ -47,6 +47,33 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { theme, toggleTheme, isDark, accent, setAccent, accents } = useTheme();
+
+  // Refs for click-outside detection
+  const profileMenuRef = useRef(null);
+  const notificationsRef = useRef(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      // Close profile menu if clicking outside
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
+      }
+      // Close notifications if clicking outside
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    }
+
+    // Add event listener when any dropdown is open
+    if (showProfileMenu || showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfileMenu, showNotifications]);
 
   const accentBackgrounds = {
     emerald: isDark
@@ -294,7 +321,7 @@ export default function Layout({ children }) {
             </button>
 
             {/* Notifications */}
-            <div className="relative">
+            <div className="relative" ref={notificationsRef}>
               <button
                 onClick={() => setShowNotifications((v) => !v)}
                 className="relative p-2 hover:bg-emerald-900/20 dark:hover:bg-emerald-900/40 rounded-xl transition-colors"
@@ -424,7 +451,7 @@ export default function Layout({ children }) {
             </Link>
 
             {/* Profile dropdown */}
-            <div className="relative">
+            <div className="relative" ref={profileMenuRef}>
               <button
                 onClick={() => setShowProfileMenu((v) => !v)}
                 className="flex items-center gap-2 pl-3 border-l border-emerald-800/60"

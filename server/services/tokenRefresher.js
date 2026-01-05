@@ -1,12 +1,48 @@
 import SocialAccount from '../models/SocialAccount.js'
 import Notification from '../models/Notification.js'
+import oauthService from './oauthService.js'
 
 const REFRESH_WINDOW_MS = (24 * 60 * 60 * 1000) // 24 hours before expiry
 const EXPIRY_ALERT_WINDOW_MS = (3 * 24 * 60 * 60 * 1000) // Alert 3 days before expiry
 
-// Placeholder provider refreshers map. Real implementations should call provider token endpoints.
+// Provider token refreshers using oauthService
 const providerRefreshers = {
-  // example: twitter: async (account) => { /* exchange refresh token */ }
+  youtube: async (account) => {
+    if (!account.refreshToken) return null
+    const result = await oauthService.refreshAccessToken('youtube', account.refreshToken)
+    return {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      tokenExpiresAt: Date.now() + (result.expiresIn * 1000)
+    }
+  },
+  twitter: async (account) => {
+    if (!account.refreshToken) return null
+    const result = await oauthService.refreshAccessToken('twitter', account.refreshToken)
+    return {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      tokenExpiresAt: Date.now() + (result.expiresIn * 1000)
+    }
+  },
+  facebook: async (account) => {
+    if (!account.refreshToken) return null
+    const result = await oauthService.refreshAccessToken('facebook', account.refreshToken)
+    return {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      tokenExpiresAt: Date.now() + (result.expiresIn * 1000)
+    }
+  },
+  linkedin: async (account) => {
+    if (!account.refreshToken) return null
+    const result = await oauthService.refreshAccessToken('linkedin', account.refreshToken)
+    return {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      tokenExpiresAt: Date.now() + (result.expiresIn * 1000)
+    }
+  }
 }
 
 async function refreshAccount(account) {

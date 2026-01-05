@@ -15,7 +15,12 @@ import {
   addMember,
   removeMember,
   updateMemberRole,
-  getMembers
+  getMembers,
+  generateInviteLink,
+  getInviteLinks,
+  revokeInviteLink,
+  joinViaInviteLink,
+  getTeamByInviteLink
 } from '../controllers/teamController.js'
 
 const router = express.Router()
@@ -32,5 +37,14 @@ router.get('/:slug/members', auth, requireTeamMember({ teamParam: 'slug' }), get
 router.post('/:slug/members', auth, requireTeamMember({ teamParam: 'slug' }), requirePermission('canManageMembers'), addMember)
 router.delete('/:slug/members/:memberId', auth, requireTeamMember({ teamParam: 'slug' }), requirePermission('canManageMembers'), removeMember)
 router.patch('/:slug/members/:memberId/role', auth, requireTeamMember({ teamParam: 'slug' }), requireAdmin, updateMemberRole)
+
+// Shareable invite links
+router.post('/:slug/invite-links', auth, requireTeamMember({ teamParam: 'slug' }), requirePermission('canManageMembers'), generateInviteLink)
+router.get('/:slug/invite-links', auth, requireTeamMember({ teamParam: 'slug' }), requirePermission('canManageMembers'), getInviteLinks)
+router.delete('/:slug/invite-links/:code', auth, requireTeamMember({ teamParam: 'slug' }), requirePermission('canManageMembers'), revokeInviteLink)
+
+// Public join via invite link (preview and join)
+router.get('/join/:slug/:code', getTeamByInviteLink)
+router.post('/join/:slug/:code', auth, joinViaInviteLink)
 
 export default router

@@ -7,6 +7,12 @@ const api = axios.create({
   timeout: 10000,
 })
 
+// Create a separate instance for file uploads with longer timeout
+const uploadApi = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 300000, // 5 minutes for video uploads
+})
+
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
@@ -21,8 +27,34 @@ api.interceptors.request.use(
   }
 )
 
+// Same interceptor for upload API
+uploadApi.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('linkhub_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
 // Response interceptor to handle errors
 api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('linkhub_token')
+      localStorage.removeItem('linkhub_user')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
+uploadApi.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
@@ -68,6 +100,58 @@ export const postsAPI = {
   publish: (id) => api.post(`/posts/${id}/publish`),
   cancel: (id) => api.delete(`/posts/${id}`),
   update: (id, data) => api.put(`/posts/${id}`, data),
+}
+
+export const mediaAPI = {
+  uploadVideo: (file, onProgress) => {
+    const formData = new FormData()
+    formData.append('video', file)
+    return uploadApi.post('/media', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress) {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          onProgress(percentCompleted)
+        }
+      }
+    })
+  },
+  uploadImage: (file, onProgress) => {
+    const formData = new FormData()
+    formData.append('image', file)
+    return api.post('/media/image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress) {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          onProgress(percentCompleted)
+        }
+      }
+    })
+  },
+  uploadImages: (files, onProgress) => {
+    const formData = new FormData()
+    files.forEach((file) => {
+      formData.append('images', file)
+    })
+    return api.post('/media/images', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress) {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          onProgress(percentCompleted)
+        }
+      }
+    })
+  },
+  deleteVideo: (filename) => api.delete(`/media/${filename}`),
+  deleteImage: (filename) => api.delete(`/media/image/${filename}`),
 }
 
 export const analyticsAPI = {

@@ -6,7 +6,9 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createServer } from 'http';
 import { requestLogger, errorLogger, logger } from './utils/logger.js';
+import { initializeSocketIO } from './services/socketService.js';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -16,6 +18,10 @@ const __dirname = path.dirname(__filename);
 dotenv.config();
 
 const app = express();
+const httpServer = createServer(app);
+
+// Initialize Socket.IO for real-time notifications
+const io = initializeSocketIO(httpServer);
 
 // Security middleware
 app.use(helmet({
@@ -93,6 +99,9 @@ app.use('/api/landing', (await import('./routes/landing.js')).default);
 // Mount public profile routes (shareable profiles)
 app.use('/api/u', (await import('./routes/publicProfile.js')).default);
 
+// Mount media upload routes (for video uploads)
+app.use('/api/media', (await import('./routes/media.js')).default);
+
 // Serve static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -144,7 +153,8 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
   logger.info(`Health check: http://localhost:${PORT}/api/health`);
+  logger.info(`WebSocket server ready for real-time notifications`);
 });
