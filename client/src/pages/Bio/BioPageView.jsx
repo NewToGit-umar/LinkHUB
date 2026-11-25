@@ -132,7 +132,7 @@ export default function BioPageView() {
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Page Not Found</h1>
           <p className="text-gray-400 mb-6">
-            {error || "The bio page you're looking for doesn't exist."}
+            {error || "The bio page you are looking for does not exist."}
           </p>
           <Link
             to="/"
